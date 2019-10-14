@@ -1,6 +1,8 @@
 import os
 
 from app import create_app
+from app import db
+from models import Mesurment
 
 if os.environ["FLASK_ENV_TYPE"] == "Development":
     from config.development import Development as Config
@@ -11,6 +13,9 @@ else:
 
 app = create_app(Config)
 
+
+
 @app.route("/")
 def hello():
+
     return "Hello world"
