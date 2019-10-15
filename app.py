@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 
 db = SQLAlchemy()
 migrate = Migrate()
-from models import Mesurment
+from models import Measurement
 
 def create_app(config):
     app = Flask(__name__)

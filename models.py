@@ -2,10 +2,10 @@ from app import db
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 
-class Mesurment(db.Model):
+class Measurement(db.Model):
     __tablename__ = 'measurements'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(Integer, primary_key=True)
     temperature = db.Column(Integer, nullable=False)
     air_quality = db.Column(Integer, nullable=False)
     humidity = db.Column(Integer, nullable=False)

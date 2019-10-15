@@ -2,7 +2,7 @@ import os
 
 from app import create_app
 from app import db
-from models import Mesurment
+from models import Measurement
 
 if os.environ["FLASK_ENV_TYPE"] == "Development":
     from config.development import Development as Config
