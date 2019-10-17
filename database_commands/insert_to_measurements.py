@@ -1,7 +1,7 @@
 import random
-from app import db
+from flask_app import db
 from server import app
-from models import Measurement
+from flask_app.measurements.models import Measurement
 from datetime import datetime, timedelta
 
 

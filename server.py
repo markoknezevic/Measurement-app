@@ -1,8 +1,6 @@
 import os
 
-from app import create_app
-from app import db
-from models import Measurement
+from flask_app import create_app
 
 if os.environ["FLASK_ENV_TYPE"] == "Development":
     from config.development import Development as Config
