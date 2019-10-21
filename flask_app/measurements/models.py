@@ -10,3 +10,4 @@ class Measurement(db.Model):
     air_quality = db.Column(Integer, nullable=False)
     humidity = db.Column(Integer, nullable=False)
     timestamp = db.Column(DateTime, nullable=False, default=datetime.utcnow())
+

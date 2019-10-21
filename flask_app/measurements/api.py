@@ -4,9 +4,11 @@ from flask import request
 from flask_app import db
 from flask_app.measurements.models import Measurement
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 
 @measurement_api.route("/")
+@measurement_api.route("/<int:measurement_id>")
 class MeasurementApi(Resource):
 
     def post(self):
@@ -32,19 +34,34 @@ class MeasurementApi(Resource):
 
         return {'message': 'Success!'}, 200
 
+    def get(self, measurement_id):
+        try:
+            measurement = db.session. \
+                query(Measurement). \
+                filter(Measurement.id == measurement_id). \
+                one()
 
+        except NoResultFound as error:
+            print(f"No result found for id: {measurement_id}")
+            print(f"Error: {error}")
+            return {'message': 'No result found.'}, 404
 
-    def get(self):
-        return {'message': "message"}, 200
+        except MultipleResultsFound as error:
+            print(f"Multiple results found for id: {measurement_id}")
+            print(f"Error: {error}")
+            return {'message': 'Database error.'}, 500
 
+        except SQLAlchemyError as sqlalchemy_error:
+            print(f"SqlAlchemy error:: {sqlalchemy_error}")
+            return {'message': 'Database error.'}, 500
 
+        except Exception as server_error:
+            print(f"Server error:: {server_error}")
+            return {'message': 'Server error.'}, 500
 
-# @measurement_api.route('/pera')
-# @measurement_api.route('/pera/<int:id>')
-# @measurement_api.route('/nije_pera')
-# class MeasurementApi2(Resource):
-#     pass
-#
-# @measurement_api.route('/treca')
-# class MeasurementApi3(Resource):
-#     pass
+        response_data = {'temperature': measurement.temperature,
+                         'air_quality': measurement.air_quality,
+                         'humidity': measurement.humidity,
+                         'created_at:': measurement.timestamp.date()}
+
+        return response_data, 200
