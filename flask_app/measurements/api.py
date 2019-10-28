@@ -5,6 +5,11 @@ from flask_app import db
 from flask_app.measurements.models import Measurement
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from flask_app.measurements.schemas import MeasurementGetSchema, MeasurementPostSchema
+from marshmallow import ValidationError
+
+measurement_get_schema = MeasurementGetSchema()
+measurement_post_schema = MeasurementPostSchema()
 
 
 @measurement_api.route("/")
@@ -13,26 +18,24 @@ class MeasurementApi(Resource):
 
     def post(self):
         try:
-            data = request.get_json(force=True)
-
-            measurement = Measurement(
-                temperature=data["temperature"],
-                air_quality=data["air_quality"],
-                humidity=data["humidity"])
-
-            # mesaurement = Measurement(**data)
-
+            measurement_dict = measurement_post_schema.load(request.get_json(force=True))
+            measurement = Measurement(**measurement_dict)
             db.session.add(measurement)
             db.session.commit()
 
         except SQLAlchemyError as e:
             print("SQLAlchemy error {}".format(e))
             return {'message': 'Database error'}, 500
+        except ValidationError as e:
+            print("Validation error:: {}".format(e))
+            return {'message': f'Validation error {e}'}, 500
         except Exception as e:
             print("Unknown error:: {}".format(e))
-            return {'message': ''}, 500
+            return {'message': 'Unknown error'}, 500
 
         return {'message': 'Success!'}, 200
+
+
 
     def get(self, measurement_id):
         try:
@@ -55,13 +58,13 @@ class MeasurementApi(Resource):
             print(f"SqlAlchemy error:: {sqlalchemy_error}")
             return {'message': 'Database error.'}, 500
 
+        except ValidationError as e:
+            print("Validation error:: {}".format(e))
+            return {'message': f'Validation error {e}'}, 500
+
         except Exception as server_error:
             print(f"Server error:: {server_error}")
             return {'message': 'Server error.'}, 500
 
-        response_data = {'temperature': measurement.temperature,
-                         'air_quality': measurement.air_quality,
-                         'humidity': measurement.humidity,
-                         'created_at:': measurement.timestamp.date()}
+        return measurement_get_schema.dump(measurement), 200
 
-        return response_data, 200
