@@ -7,6 +7,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from flask_app.measurements.schemas import MeasurementGetSchema, MeasurementPostSchema
 from marshmallow import ValidationError
+from datetime import datetime
+import math
 
 measurement_get_schema = MeasurementGetSchema()
 measurement_post_schema = MeasurementPostSchema()
@@ -34,8 +36,6 @@ class MeasurementApi(Resource):
             return {'message': 'Unknown error'}, 500
 
         return {'message': 'Success!'}, 200
-
-
 
     def get(self, measurement_id):
         try:
@@ -68,3 +68,41 @@ class MeasurementApi(Resource):
 
         return measurement_get_schema.dump(measurement), 200
 
+
+@measurement_api.route("/history")
+class MeasurementsApi2(Resource):
+    def get(self):
+
+        try:
+            start = int(request.args["start"])
+            end = int(request.args["end"])
+            limit = int(request.args["limit"])
+
+            start_date = datetime.fromtimestamp(start / 1000.0)
+            end_date = datetime.fromtimestamp(end / 1000.0)
+            list_of_measurements = db.session.query(Measurement).filter(Measurement.timestamp >= start_date,
+                                                                        Measurement.timestamp <= end_date)
+            number_of_elements = list_of_measurements.count()
+
+            if limit == 0:
+                step = 1
+            else:
+                step = math.ceil(number_of_elements / limit)
+
+        except ValueError as error:
+            print(error)
+            return {'Message': 'Wrong type of arguments'}
+
+        except Exception as error:
+            print(error)
+            return {'Message': "Internal error :)"},
+
+        return {"Measurements": [measurement_get_schema.dump(list_of_measurements[i]) for i in
+                                 range(0, number_of_elements, step)]}, 200
+
+
+@measurement_api.route("/latest")
+class MeasurementsApiLast(Resource):
+    def get(self):
+        last_record = db.session.query(Measurement).first()
+        return measurement_get_schema.dump(last_record)
