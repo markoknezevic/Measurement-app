@@ -14,6 +14,13 @@ measurement_get_schema = MeasurementGetSchema()
 measurement_post_schema = MeasurementPostSchema()
 
 
+@measurement_api.route("/latest")
+class MeasurementsApiLast(Resource):
+    def get(self):
+        last_record = db.session.query(Measurement).order_by(Measurement.id.desc()).first()
+        return measurement_get_schema.dump(last_record)
+
+
 @measurement_api.route("/")
 @measurement_api.route("/<int:measurement_id>")
 class MeasurementApi(Resource):
@@ -74,20 +81,34 @@ class MeasurementsApi2(Resource):
     def get(self):
 
         try:
-            start = int(request.args["start"])
-            end = int(request.args["end"])
-            limit = int(request.args["limit"])
+            # proveravamo da li je "start" argumenat prosledjen
+            if "start" in request.args:
+                start = int(request.args["start"])
+            else:
+                start = 0
 
+            # proveravamo da li je "end" argumenat prosledjen ako nije uzimamo danasnji datum
+            if "end" in request.args:
+                end = int(request.args["end"])
+            else:
+                end = datetime.utcnow().timestamp() * 1000
+
+            # Konvertujemo datum iz milisekundi u datum
             start_date = datetime.fromtimestamp(start / 1000.0)
             end_date = datetime.fromtimestamp(end / 1000.0)
+
+            # izvlacimo iz tabele measurements sve redove izmedju trazenih datuma
             list_of_measurements = db.session.query(Measurement).filter(Measurement.timestamp >= start_date,
                                                                         Measurement.timestamp <= end_date)
+            # broj preuzetih redova iz tabele measurements
             number_of_elements = list_of_measurements.count()
 
-            if limit == 0:
-                step = 1
-            else:
+            # proveravamo da li je prosledjen argumenat "limit" i da li je 0
+            if "limit" in request.args and int(request.args["limit"]) != 0:
+                limit = int(request.args["limit"])
                 step = math.ceil(number_of_elements / limit)
+            else:
+                step = 1
 
         except ValueError as error:
             print(error)
@@ -101,8 +122,4 @@ class MeasurementsApi2(Resource):
                                  range(0, number_of_elements, step)]}, 200
 
 
-@measurement_api.route("/latest")
-class MeasurementsApiLast(Resource):
-    def get(self):
-        last_record = db.session.query(Measurement).first()
-        return measurement_get_schema.dump(last_record)
+
